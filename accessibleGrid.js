@@ -11,8 +11,8 @@
 *     caption    - string for the <caption>
 *     colDesc    - columns descriptor object
 *
-* VERSION = 0.01, 27 April 2012
-*
+* VERSION = 0.02, 05 May 2012
+* 
 * Author: Benjamin Krepp
 */
 function AccessibleGrid(oConfig)  {
@@ -54,6 +54,7 @@ function AccessibleGrid(oConfig)  {
 
 /*
 * loadArrayData() - Method to load the <tbody> of an AccessibleGrid object from a JavaScript array of objects.
+*                   Ensures that the <tbody> of the table is empty before loading the data.
 * 
 * Parameters: data - JavaScript array of objects.
 *
@@ -63,9 +64,13 @@ AccessibleGrid.prototype.loadArrayData = function(aData) {
 	var thisObj = this;
 	var szRowId;
 	var szRow;
-	var count = 0;
+	var count;
+	
+	// Remove any child nodes of the <tbody> element.
+	thisObj.$data.empty();
 	
 	// Iterate over each record in the array, i.e., each row in the table.
+	count = 0;
 	$.each(aData, function(ndx, record) {
 		count = count + 1;
 		var szRow = '<tr>';
@@ -93,20 +98,6 @@ AccessibleGrid.prototype.loadArrayData = function(aData) {
 }; // end loadArrayData()
 
 /*
-* appendArrayData() - Adds content from a JavaScript array of objects inside the
-*                     <tbody> of an AccessibleGrid and after any existing elements.
-*                     If <tbody> is empty, the effect of calling appendArrayData() 
-*                     is identical to that of calling loadArrayData().
-* 
-* Parameters: none.
-*
-* @return N/A
-*/
-AccessibleGrid.prototype.appendArrayData = function(aData) {
-	
-}; // end appendArrayData()
-
-/*
 * clearBody() - Method to remove the entire contents of the <tbody> of an AccessibleGrid.
 * 
 * Parameters: none.
@@ -114,7 +105,7 @@ AccessibleGrid.prototype.appendArrayData = function(aData) {
 * @return N/A
 */
 AccessibleGrid.prototype.clearBody = function() {
-	this.$data.find('tr','th').remove();
+	this.$data.empty();
+	this.nRows = 0;
 }; // end clearBody()
-
 
