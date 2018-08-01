@@ -7,16 +7,19 @@
  * of this library has been successfully tested with versions of jQuery going back as 
  * far as version 1.0.
  *
- * VERSION = 0.05, 5 June 2012
+ * VERSION = 0.06, 5 June 2012
  *
  * Author: Benjamin Krepp
  *
  * Revision history:
  * 
- * 0.05 - Interface change: renamed constructor 'AccessibleGrid' simply to 'Grid',
-*         in belated recognition of encapsulation by the CtpsAccessibilityLib object. 
- *        prototype" functions made explicit members of AccessibleGrid.prototype object.
+ * 0.06 - Added support for thcls and cls options in columns descriptor.
+ *        Tightend up the code a bit.
+ * 0.05 - Interface change: Renamed constructor 'AccessibleGrid' simply to 'Grid',
+ *        in belated recognition of encapsulation by the CtpsAccessibilityLib object. 
+ *        "prototype" functions made explicit members of Grid.prototype object.
  *        Added col1th, scopeAttrs, and style configuration options.
+ *        Added versionID string.
  * 0.04 - Interface change: Introduced CtspAccessibilityLib object to minimize impact
  *        on the global name space.
  *        Added datatable attribute to <table> element; set its value to "1".
@@ -45,7 +48,7 @@ var CtpsAccessibilityLib = {};
 *
 * Options in oConfig:
 *     divId      - id of the <div> in which to create the table (REQUIRED)
-*     tableId    - id of the <table> to be created (REQUIRED)
+*     tableId    - id of the <table> to be created
 *     ariaLive   - value of aria-live attribute of the <div>; defaults to 'assertive'
 *     caption    - string for the table's <caption>
 *     colDesc    - columns descriptor object (see below)
@@ -55,22 +58,28 @@ var CtpsAccessibilityLib = {};
 *                  in the table and a scope="row" for the first element (<td> or <th>) in 
 *                  each row in the table; defaults to true
 *     style      - value of style attribute to be assigned to the <table> created;
-*                  this is specified as a string, e.g., "width:500"
+*                  this is specified as a string, e.g., style="width:500"
 *     summary    - string for summary attribute of the <table>
+*     tablecls   - CSS class to assign to <table> element
+*     capcls     - CSS class to assgin to <caption> element
+*     theadcls   - CSS class to assign to <thead> element
+*     tbodycls   - CSS class to assign to <tbody> element
 *
 * Options in columns descriptor object:
+*     cls        - CSS class to assign to "data" elements for this colum (<td> or <th>).
 *     dataIndex  - name of field in input data object to be mapped to this column (REQUIRED)
 *     header     - column header text
 *     renderer   - user-provided function to call to render each data value (optional)
 *     style      - value of style attribute to be assigned to the table header (<th>) element
 *                  created for the column; this is specified as a string, e.g., style="width:50"
+*     thcls      - CSS class to assign to column header <th> element
 *
 * @return - this (i.e., the object constructed)
 *
 */
 CtpsAccessibilityLib.Grid = function(oConfig) {
 	this.$divId = $('#' + oConfig.divId); // the jQuery object for the div into which to place the table
-	this.tableId = oConfig.tableId;
+	this.tableId = (oConfig.tableId !== undefined) ? oConfig.tableId : this.$divId + '_table';
 	this.theadId = oConfig.tableId + '_head';
 	this.tbodyId = oConfig.tableId + '_body';
 	this.colDesc = oConfig.colDesc;
@@ -81,31 +90,44 @@ CtpsAccessibilityLib.Grid = function(oConfig) {
 	var szCaption  = oConfig.caption || '';
 	var szSummary  = oConfig.summary || '';
 	var szAriaLive = oConfig.ariaLive || 'assertive';
+	
+	var szTablecls = oConfig.tablecls || '';
+	var szTheadcls = oConfig.theadcls || '';
+	var szTbodycls = oConfig.tbodycls || '';
+	var szCapcls   = oConfig.capcls || '';
+	
 	var szTemp = '';
 	var i;
   
-	szTemp  = '<table id="' + this.tableId + '"' + ' datatable="1"' + ' summary="' + szSummary + '"' ;
-	if (oConfig.style !== '') {
-		szTemp += ' style="' + oConfig.style + '"';
-	}
+	szTemp  = '<table id="' + this.tableId + '"' ;
+	szTemp += ' datatable="1"' + ' summary="' + szSummary + '"' ;
+	szTemp += (oConfig.tablecls !== undefined) ? ' class="' + oConfig.tablecls + '"' : '';
+	szTemp += (oConfig.style !== undefined) ? ' style="' + oConfig.style + '"' : '';
 	szTemp += ' aria-live="' + szAriaLive + '"' + ' role="grid">';
-	szTemp += '<caption>' + szCaption + '</caption>';
+
+	szTemp += '<caption '; 
+	szTemp += (oConfig.capcls !== undefined) ? ' class="' + oConfig.capcls + '"' : '';
+	szTemp += '>' + szCaption + '</caption>';
   
-	szTemp += '<thead id="' + this.theadId + '"><tr>';
-	for (i = 0; i < this.colDesc.length; i = i + 1) {
+	szTemp += '<thead id="' + this.theadId;
+	szTemp += (oConfig.theadcls !== undefined) ? ' class="' + oConfig.theadcls + '"' : '';
+	szTemp += '">';
+	
+	szTemp += '<tr>';
+	for (i = 0; i < this.colDesc.length; i++) {
 		szTemp += '<th id="' + this.tableId + '_' + this.colDesc[i].dataIndex + '"' ;
-		if (this.colDesc[i].style !== undefined) {
-			szTemp += ' style="' + this.colDesc[i].style + '"';
-		}
-		if (this.scopeAttrs === true) {
-			szTemp += ' scope="col"';
-		}
+		szTemp += (this.colDesc[i].thcls !== undefined) ? ' class="' + this.colDesc[i].thcls + '"' : '';
+		szTemp += (this.colDesc[i].style !== undefined) ? ' style="' + this.colDesc[i].style + '"' : '';
+		szTemp += (this.scopeAttrs === true) ? ' scope="col"' : '';
 		szTemp += ' role="gridcell">'; 
 		szTemp += this.colDesc[i].header + '</th>';
 	}
-	szTemp += '</tr></thead>';
+	szTemp += '</tr>';
+	szTemp += '</thead>';
   
-	szTemp += '<tbody ' + 'id="' + this.tableId + '_body">';
+	szTemp += '<tbody ' + 'id="' + this.tableId + '_body"' 
+	szTemp += (oConfig.tbodycls !== undefined) ? ' class="' + oConfig.tbodycls + '"' : '';
+	szTemp += '>';
 	szTemp += '</tbody>';
 	szTemp += '</table>';
 
@@ -115,11 +137,11 @@ CtpsAccessibilityLib.Grid = function(oConfig) {
 	this.$thead = $('#' + this.theadId);               // the jQuery object for the table header
 	this.$headers = $('#' + this.theadId).find('th');  // an array of jquery objects for the header cells
 	this.$data = $('#' + this.tbodyId);                // the jQuery object for the table body
-	return this; // Just to be explicit. This is the default behavior for all constructors.
+	return this; // This line is here only to be explicit. This is the default behavior for all constructors.
 }; // end CtpsAccessibilityLib.Grid() constructor
 
 CtpsAccessibilityLib.Grid.prototype = {
-	szVersionID : "0.05",
+	szVersionID : "0.06",
 	/*
 	 * loadArrayData() - Method to load the <tbody> of an Grid object from a JavaScript array of objects.
 	 *                   Ensures that the <tbody> of the table is empty before loading the data.
@@ -135,7 +157,7 @@ CtpsAccessibilityLib.Grid.prototype = {
 		// Remove any child nodes of the <tbody> element.
 		thisObj.$data.empty();
 			
-		// Iterate over each record in the array, i.e., each row in the table.
+		// Iterate over all the records in the array, i.e., all the rows in the table.
 		count = 0;
 		$.each(aData, function(ndx, record) {
 			count = count + 1;
@@ -145,18 +167,25 @@ CtpsAccessibilityLib.Grid.prototype = {
 			var szTd;
 			var szHeaders;
 
-			// Iterate over the columns in a row.
-			for (i = 0; i < thisObj.colDesc.length; i = i + 1) {
+			// Iterate over all the columns in a row.
+			for (i = 0; i < thisObj.colDesc.length; i++) {
 				if (i === 0) {
 					szTd = (thisObj.col1th === true) ? '<th ' : '<td '; 
 					szTd += 'id="' + szRowId + '"';
+					if (thisObj.colDesc[i].cls !== undefined) {
+						szTd += ' class="' + thisObj.colDesc[i].cls + '"';
+					}
 					if (thisObj.scopeAttrs === true) {
 						szTd += ' scope="row"';
 					}
 					szTd += ' role="gridcell">';
 				} else {
 					szHeaders = thisObj.tableId + '_' + thisObj.colDesc[i].dataIndex + ' ' + szRowId;
-					szTd = '<td headers="' + szHeaders + '" role="gridcell">';
+					szTd = '<td ';
+					if (thisObj.colDesc[i].cls !== undefined) {
+						szTd += ' class="' + thisObj.colDesc[i].cls + '"';
+					}
+					szTd += ' headers="' + szHeaders + '" role="gridcell">';
 				}
 				szRow += szTd;
 				szRow += (thisObj.colDesc[i].renderer === undefined) ? record[thisObj.colDesc[i].dataIndex] 
