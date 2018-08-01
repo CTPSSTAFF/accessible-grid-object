@@ -1,6 +1,36 @@
 /*
+ * CTPS Accessibility Library
+ *
+ * This library currently supports (only) one 'accessible' object: the Accessible Grid.
+ * This library depends upon the jQuery library. The jQuery support required is minimal,
+ * so pretty much any version of jQuery should be adequate.
+ *
+ * VERSION = 0.04, 30 May 2012
+ *
+ * Author: Benjamin Krepp
+ *
+ * Revision history:
+ * 
+ * 0.04 - Wrapped everything in a wrapper object to minimize impact on global name space.
+ *        Set datatable attribute on <table> element to "1".
+ *        Ran through JsLint.
+ * 0.03 - Documented column descriptor object.
+ * 0.02 - Added support for renderer option in column descriptor object.
+ *        loadArrayData clears contents of <tbody> before loading data.
+ *        Added clearBody method.
+ * 0.01 - Baseline version.
+ *
+*/
+var CtpsAccessibilityLib = {};
+
+/*
 * AccessibleGrid() - Constructor function to create an accessible/navigable HTML grid object.
 *                    Note: this constructor does NOT populate the body of the grid with data.
+*
+* WARNING/REMINDER: This is a *constructor* function. A call to it MUST be preceded by the "new"
+*                   keyword, e.g.:
+*                       var myGrid = new CtpsAccessibilityLib.AccessibleGrid( ... );
+*                   Failure to do this will cause the global object to be (silently) clobbered!
 *
 * Parameters: oConfig (configuration object)
 *
@@ -19,11 +49,8 @@
 *
 * @return - this (i.e., the object constructed)
 *
-* VERSION = 0.03, 09 May 2012
-*
-* Author: Benjamin Krepp
 */
-function AccessibleGrid(oConfig)  {
+CtpsAccessibilityLib.AccessibleGrid = function(oConfig) {
 	this.$divId = $('#' + oConfig.divId); // the jQuery object for the div into which to place the table
 	this.tableId = oConfig.tableId;
 	this.theadId = oConfig.tableId + '_head';
@@ -38,11 +65,11 @@ function AccessibleGrid(oConfig)  {
 	var szTemp = '';
 	var i;
   
-	szTemp  = '<table id="' + this.tableId + '"' + ' summary="' + szSummary + '"' + ' aria-live="' + szAriaLive + '"' + ' role="grid">';
+	szTemp  = '<table id="' + this.tableId + '"' + ' datatable="1"' + ' summary="' + szSummary + '"' + ' aria-live="' + szAriaLive + '"' + ' role="grid">';
 	szTemp += '<caption>' + szCaption + '</caption>';
   
 	szTemp += '<thead id="' + this.theadId + '"><tr>';
-	for (i = 0; i < this.colDesc.length; i++) {
+	for (i = 0; i < this.colDesc.length; i = i + 1) {
 		szTemp += '<th id="' + this.tableId + '_' + this.colDesc[i].dataIndex + '"' + ' scope="col" role="gridcell">'; 
 		szTemp += this.colDesc[i].header + '</th>';
 	}
@@ -61,22 +88,20 @@ function AccessibleGrid(oConfig)  {
 }; // end AccessibleGrid() constructor
 
 /*
-* loadArrayData() - Method to load the <tbody> of an AccessibleGrid object from a JavaScript array of objects.
-*                   Ensures that the <tbody> of the table is empty before loading the data.
-* 
-* Parameters: data - JavaScript array of objects.
-*
-* @return N/A
-*/
-AccessibleGrid.prototype.loadArrayData = function(aData) {
+ * loadArrayData() - Method to load the <tbody> of an AccessibleGrid object from a JavaScript array of objects.
+ *                   Ensures that the <tbody> of the table is empty before loading the data.
+ * 
+ * Parameters: data - JavaScript array of objects.
+ *
+ * @return N/A
+ */
+CtpsAccessibilityLib.AccessibleGrid.prototype.loadArrayData = function(aData) {
 	var thisObj = this;
-	var szRowId;
-	var szRow;
 	var count;
-	
+		
 	// Remove any child nodes of the <tbody> element.
 	thisObj.$data.empty();
-	
+		
 	// Iterate over each record in the array, i.e., each row in the table.
 	count = 0;
 	$.each(aData, function(ndx, record) {
@@ -86,10 +111,9 @@ AccessibleGrid.prototype.loadArrayData = function(aData) {
 		var i;
 		var szTd;
 		var szHeaders;
-		var tmp;
 
 		// Iterate over the columns in a row.
-		for (i = 0; i < thisObj.colDesc.length; i++) {
+		for (i = 0; i < thisObj.colDesc.length; i = i + 1) {
 			if (i === 0) {
 				szTd = '<td id="' + szRowId + '"' + ' scope="row" role="gridcell">';
 			} else {
@@ -98,7 +122,7 @@ AccessibleGrid.prototype.loadArrayData = function(aData) {
 			}
 			szRow += szTd;
 			szRow += (thisObj.colDesc[i].renderer === undefined) ? record[thisObj.colDesc[i].dataIndex] 
-			                                                     : thisObj.colDesc[i].renderer(record[thisObj.colDesc[i].dataIndex]);
+																 : thisObj.colDesc[i].renderer(record[thisObj.colDesc[i].dataIndex]);
 			szRow += '</td>';
 		} // for loop over columns
 		szRow += '</tr>';
@@ -108,13 +132,13 @@ AccessibleGrid.prototype.loadArrayData = function(aData) {
 }; // end loadArrayData()
 
 /*
-* clearBody() - Method to remove the entire contents of the <tbody> of an AccessibleGrid.
-* 
-* Parameters: none.
-*
-* @return N/A
-*/
-AccessibleGrid.prototype.clearBody = function() {
+ * clearBody() - Method to remove the entire contents of the <tbody> of an AccessibleGrid object.
+ * 
+ * Parameters: none.
+ *
+ * @return N/A
+ */
+CtpsAccessibilityLib.AccessibleGrid.prototype.clearBody = function() {
 	this.$data.empty();
 	this.nRows = 0;
-}; // end clearBody()
+}; // end clearBody() 
