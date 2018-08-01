@@ -1,8 +1,9 @@
 /*
-* AccessibleGrid() - Constructor function to creat an accessible HTML grid object.
-*                    Note: this constructor does NOT populate the grid with data.
+* AccessibleGrid() - Constructor function to create an accessible/navigable HTML grid object.
+*                    Note: this constructor does NOT populate the body of the grid with data.
 *
 * Parameters: oConfig (configuration object)
+*
 * Options in oConfig:
 *     divId      - id of the <div> in which to create the table
 *     tableId    - id of the <table> to be created
@@ -11,8 +12,15 @@
 *     caption    - string for the <caption>
 *     colDesc    - columns descriptor object
 *
-* VERSION = 0.02, 05 May 2012
-* 
+* Options in columns descriptor object:
+*     header     - column header text
+*     dataIndex  - name of field in input data object to be mapped to this column
+*     renderer   - user-provided function to call to render data value (optional)
+*
+* @return - this (i.e., the object constructed)
+*
+* VERSION = 0.03, 09 May 2012
+*
 * Author: Benjamin Krepp
 */
 function AccessibleGrid(oConfig)  {
@@ -78,6 +86,7 @@ AccessibleGrid.prototype.loadArrayData = function(aData) {
 		var i;
 		var szTd;
 		var szHeaders;
+		var tmp;
 
 		// Iterate over the columns in a row.
 		for (i = 0; i < thisObj.colDesc.length; i++) {
@@ -88,7 +97,8 @@ AccessibleGrid.prototype.loadArrayData = function(aData) {
 				szTd = '<td headers="' + szHeaders + '" role="gridcell">';
 			}
 			szRow += szTd;
-			szRow += record[thisObj.colDesc[i].dataIndex];
+			szRow += (thisObj.colDesc[i].renderer === undefined) ? record[thisObj.colDesc[i].dataIndex] 
+			                                                     : thisObj.colDesc[i].renderer(record[thisObj.colDesc[i].dataIndex]);
 			szRow += '</td>';
 		} // for loop over columns
 		szRow += '</tr>';
@@ -108,4 +118,3 @@ AccessibleGrid.prototype.clearBody = function() {
 	this.$data.empty();
 	this.nRows = 0;
 }; // end clearBody()
-
